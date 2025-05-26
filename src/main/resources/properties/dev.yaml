@@ -1,0 +1,6 @@
+
+dummy:
+  host: "dummyjson.com"
+  port: "443"
+  path:
+    products: "/products"
