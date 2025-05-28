@@ -12,7 +12,15 @@ http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/htt
 				<ee:set-payload ><![CDATA[%dw 2.0
 output application/json
 ---
-payload]]></ee:set-payload>
+payload.products map {
+    "id": $.id,
+    "title": $.title,
+    "price": $.price,
+    "discountPercentage": $.discountPercentage,
+    "stock": $.stock,
+    "sku": $.sku,
+    "thumbnail": $.thumbnail
+} ]]></ee:set-payload>
 			</ee:message>
 		</ee:transform>
 	</sub-flow>
