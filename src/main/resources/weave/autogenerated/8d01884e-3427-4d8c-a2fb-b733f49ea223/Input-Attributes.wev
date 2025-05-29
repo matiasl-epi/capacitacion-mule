@@ -1,6 +1,6 @@
 %dw 2.0
 
-type auto_163ed923_5ee1_462b_ab78_ff40a4c189dc_Output_Attributes = {|
+type auto_8d01884e_3427_4d8c_a2fb_b733f49ea223_Input_Attributes = {|
   clientCertificate?: {|
     publicKey?: {|  |}, 
     "type"?: String, 
@@ -16,7 +16,7 @@ type auto_163ed923_5ee1_462b_ab78_ff40a4c189dc_Output_Attributes = {|
   requestPath: String, 
   requestUri: String, 
   scheme: String, 
-  uriParams: {|  |}, 
+  uriParams: {| id: Number |}, 
   version: String, 
   localAddress: String
 |}

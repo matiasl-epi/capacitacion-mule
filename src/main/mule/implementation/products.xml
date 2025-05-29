@@ -1,12 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
-	xmlns="http://www.mulesoft.org/schema/mule/core"
-	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+<mule xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
-http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd">
 	<sub-flow name="get-products" doc:id="163ed923-5ee1-462b-ab78-ff40a4c189dc" >
-		<http:request method="GET" doc:name="Request" doc:id="f774e255-caba-447b-8171-9b3a3414360e" config-ref="Dummy_HTTP_Request_configuration" path="${dummy.path.products}"/>
+		<http:request method="GET" doc:name="Request" doc:id="f774e255-caba-447b-8171-9b3a3414360e" config-ref="Dummy_HTTP_Request_configuration" path="${secure::dummy.path.products}">
+			<http:query-params ><![CDATA[#[output application/json
+---
+{
+	"limit" : vars.limit,
+	"skip": vars.skip
+}]]]></http:query-params>
+		</http:request>
 		<ee:transform doc:name="response" doc:id="24a755e6-1502-4990-b79f-7de6be269428" >
 			<ee:message >
 				<ee:set-payload ><![CDATA[%dw 2.0
@@ -23,5 +31,60 @@ payload.products map {
 } ]]></ee:set-payload>
 			</ee:message>
 		</ee:transform>
+	</sub-flow>
+	<sub-flow name="get-products-from-db" doc:id="031ab767-b8a6-45c6-99ff-660a5810adf4" >
+		<db:select doc:name="Select" doc:id="33c71772-f899-4fa6-85d2-25f9f931a86a" config-ref="Database_Config">
+			<db:sql ><![CDATA[SELECT * FROM products]]></db:sql>
+		</db:select>
+		<ee:transform doc:name="response" doc:id="6c3cdc3a-5d69-4cca-ba43-1d2dcc5a28ba" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+	<sub-flow name="get-product-by-id" doc:id="8d01884e-3427-4d8c-a2fb-b733f49ea223" >
+		<http:request method="GET" doc:name="Request" doc:id="730cc2fc-6594-4bb9-8e72-6e0c316c4d8d" config-ref="Dummy_HTTP_Request_configuration" path="${secure::dummy.path.products}/{id}">
+			<error-mapping sourceType="HTTP:NOT_FOUND" targetType="DUMMY:NOT_FOUND" />
+			<http:uri-params><![CDATA[#[output application/java
+---
+{
+	"id" : vars.productId
+}]]]></http:uri-params>
+		</http:request>
+		<ee:transform doc:name="response" doc:id="a85ed629-689f-43b1-8a64-26f78d2358d9" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+    "id": payload.id,
+    "title": payload.title,
+    "price": payload.price,
+    "discountPercentage": payload.discountPercentage,
+    "stock": payload.stock,
+    "sku": payload.sku,
+    "thumbnail": payload.thumbnail
+} ]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+	<sub-flow name="store-product" doc:id="fa3f302e-247c-4e88-b95b-263fc84101dd" >
+		<db:insert doc:name="Insert" doc:id="76e60638-51a9-49a3-be33-a0e654d0fa0d" config-ref="Database_Config">
+			<db:sql ><![CDATA[INSERT INTO products
+(id, title, price, discountPercentage, stock, sku, thumbnail)
+VALUES(:productId, :title, :price, :discountPercentage, :stock, :sku, :thumbnail)]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	"productId": payload.id,
+	"title": payload.title,
+	"price": payload.price,
+	"discountPercentage": payload.discountPercentage,
+	"stock": payload.stock,
+	"sku": payload.sku,
+	"thumbnail": payload.thumbnail
+}]]]></db:input-parameters>
+		</db:insert>
 	</sub-flow>
 </mule>

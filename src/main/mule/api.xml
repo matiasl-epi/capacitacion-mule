@@ -3,7 +3,7 @@
     <http:listener-config name="products-api-httpListenerConfig">
         <http:listener-connection host="0.0.0.0" port="8081" />
     </http:listener-config>
-    <apikit:config name="products-api-config" api="resource::8c334cb4-84f8-42fd-808b-ce8a09097521:products-api:1.0.0:raml:zip:products-api.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    <apikit:config name="products-api-config" api="resource::8c334cb4-84f8-42fd-808b-ce8a09097521:products-api:1.1.0:raml:zip:products-api.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
     <flow name="products-api-main">
         <http:listener config-ref="products-api-httpListenerConfig" path="/api/*">
             <http:response statusCode="#[vars.httpStatus default 200]">
@@ -15,117 +15,50 @@
             </http:error-response>
         </http:listener>
         <apikit:router config-ref="products-api-config" />
-        <error-handler>
-            <on-error-propagate type="APIKIT:BAD_REQUEST">
-                <ee:transform doc:name="Transform Message">
-                    <ee:message>
-                        <ee:set-payload><![CDATA[%dw 2.0
-output application/json
----
-{message: "Bad request"}]]></ee:set-payload>
-                    </ee:message>
-                    <ee:variables>
-                        <ee:set-variable variableName="httpStatus">400</ee:set-variable>
-                    </ee:variables>
-                </ee:transform>
-            </on-error-propagate>
-            <on-error-propagate type="APIKIT:NOT_FOUND">
-                <ee:transform doc:name="Transform Message">
-                    <ee:message>
-                        <ee:set-payload><![CDATA[%dw 2.0
-output application/json
----
-{message: "Resource not found"}]]></ee:set-payload>
-                    </ee:message>
-                    <ee:variables>
-                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
-                    </ee:variables>
-                </ee:transform>
-            </on-error-propagate>
-            <on-error-propagate type="APIKIT:METHOD_NOT_ALLOWED">
-                <ee:transform doc:name="Transform Message">
-                    <ee:message>
-                        <ee:set-payload><![CDATA[%dw 2.0
-output application/json
----
-{message: "Method not allowed"}]]></ee:set-payload>
-                    </ee:message>
-                    <ee:variables>
-                        <ee:set-variable variableName="httpStatus">405</ee:set-variable>
-                    </ee:variables>
-                </ee:transform>
-            </on-error-propagate>
-            <on-error-propagate type="APIKIT:NOT_ACCEPTABLE">
-                <ee:transform doc:name="Transform Message">
-                    <ee:message>
-                        <ee:set-payload><![CDATA[%dw 2.0
-output application/json
----
-{message: "Not acceptable"}]]></ee:set-payload>
-                    </ee:message>
-                    <ee:variables>
-                        <ee:set-variable variableName="httpStatus">406</ee:set-variable>
-                    </ee:variables>
-                </ee:transform>
-            </on-error-propagate>
-            <on-error-propagate type="APIKIT:UNSUPPORTED_MEDIA_TYPE">
-                <ee:transform doc:name="Transform Message">
-                    <ee:message>
-                        <ee:set-payload><![CDATA[%dw 2.0
-output application/json
----
-{message: "Unsupported media type"}]]></ee:set-payload>
-                    </ee:message>
-                    <ee:variables>
-                        <ee:set-variable variableName="httpStatus">415</ee:set-variable>
-                    </ee:variables>
-                </ee:transform>
-            </on-error-propagate>
-            <on-error-propagate type="APIKIT:NOT_IMPLEMENTED">
-                <ee:transform doc:name="Transform Message">
-                    <ee:message>
-                        <ee:set-payload><![CDATA[%dw 2.0
-output application/json
----
-{message: "Not Implemented"}]]></ee:set-payload>
-                    </ee:message>
-                    <ee:variables>
-                        <ee:set-variable variableName="httpStatus">501</ee:set-variable>
-                    </ee:variables>
-                </ee:transform>
-            </on-error-propagate>
-        </error-handler>
-    </flow>
-	<flow name="products-api-console">
-        <http:listener config-ref="products-api-httpListenerConfig" path="/console/*">
-            <http:response statusCode="#[vars.httpStatus default 200]">
-                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
-            </http:response>
-            <http:error-response statusCode="#[vars.httpStatus default 500]">
-                <http:body>#[payload]</http:body>
-                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
-            </http:error-response>
-        </http:listener>
-        <apikit:console config-ref="products-api-config" />
-        <error-handler>
-            <on-error-propagate type="APIKIT:NOT_FOUND">
-                <ee:transform doc:name="Transform Message">
-                    <ee:message>
-                        <ee:set-payload><![CDATA[%dw 2.0
-output application/json
----
-{message: "Resource not found"}]]></ee:set-payload>
-                    </ee:message>
-                    <ee:variables>
-                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
-                    </ee:variables>
-                </ee:transform>
-            </on-error-propagate>
-        </error-handler>
+		<error-handler ref="api-error-handler" />
     </flow>
     <flow name="get:\products:products-api-config">
-		<logger level="INFO" doc:name="start" doc:id="f46535bc-e6a6-4f0c-9139-8eac9002f0c0" message="#['[API]: REQUEST\n-------\nFlow: ' ++ (flow.name default &quot;&quot;) ++ '\nRequest: ' ++ (attributes.requestUri default &quot;&quot;)]"/>
-		<flow-ref doc:name="get-products" doc:id="11369e0f-a7cb-43d8-bb67-03407fbc8e16" name="get-products"/>
-		<logger level="INFO" doc:name="end" doc:id="a6581f9f-9194-4941-b107-aef2cfb34cf3" message="#['[API]: RESPONSE\n--------\nFlow: ' ++ (flow.name default &quot;&quot;)  ++ '\nPayload:\n']#[output application/json indent=false --- (payload default &quot;&quot;)]"/>
+        <logger level="INFO" doc:name="start" doc:id="f46535bc-e6a6-4f0c-9139-8eac9002f0c0" message="#['[API]: REQUEST\n-------\nFlow: ' ++ (flow.name default &quot;&quot;) ++ '\nRequest: ' ++ (attributes.requestUri default &quot;&quot;)]" />
+        <ee:transform doc:name="params" doc:id="38d55a71-03e4-46d0-a065-27cfc400fbf3" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="limit" ><![CDATA[%dw 2.0
+output application/json
+---
+attributes.queryParams.limit]]></ee:set-variable>
+				<ee:set-variable variableName="skip" ><![CDATA[%dw 2.0
+output application/json
+---
+attributes.queryParams.skip]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<flow-ref doc:name="get-products" doc:id="11369e0f-a7cb-43d8-bb67-03407fbc8e16" name="get-products-from-db" />
+        <logger level="INFO" doc:name="end" doc:id="a6581f9f-9194-4941-b107-aef2cfb34cf3" message="#['[API]: RESPONSE\n--------\nFlow: ' ++ (flow.name default &quot;&quot;)  ++ '\nPayload:\n']#[output application/json indent=false --- (payload default &quot;&quot;)]" />
+    </flow>
+	<flow name="get:\products\(id):products-api-config">
+        <logger level="INFO" doc:name="start" doc:id="c0b31daa-3506-4ee8-8c12-e84c9ff27088" message="#['[API]: REQUEST\n-------\nFlow: ' ++ (flow.name default &quot;&quot;) ++ '\nRequest: ' ++ (attributes.requestUri default &quot;&quot;)]" />
+		<ee:transform doc:name="params">
+            <ee:variables>
+				<ee:set-variable variableName="productId" ><![CDATA[attributes.uriParams.'id']]></ee:set-variable>
+            </ee:variables>
+        </ee:transform>
+		<flow-ref doc:name="get-product-by-id" doc:id="752e07d8-543f-4e0c-b497-5e19cf605acf" name="get-product-by-id"/>
+		<logger level="INFO" doc:name="end" doc:id="a4566740-3cbd-431d-ae1a-263048228ea8" message="#['[API]: RESPONSE\n--------\nFlow: ' ++ (flow.name default &quot;&quot;)  ++ '\nPayload:\n']#[output application/json indent=false --- (payload default &quot;&quot;)]" />
+    </flow>
+    <flow name="post:\products:application\json:products-api-config">
+        <logger level="INFO" doc:name="start" doc:id="ab0ea6c5-b9fe-4747-bc89-2c5893bbd305" message="#['[API]: REQUEST\n-------\nFlow: ' ++ (flow.name default &quot;&quot;) ++ '\nRequest: ' ++ (attributes.requestUri default &quot;&quot;)]" />
+		<flow-ref doc:name="store-product" doc:id="5126c449-c1b9-4312-9e1c-9e1334493611" name="store-product"/>
+		<ee:transform doc:name="response">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  message: "Producto creado con exito!"
+} as Object {encoding: "UTF-8", mediaType: "application/json"}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+		<logger level="INFO" doc:name="end" doc:id="f9e7ea59-f92b-40ce-b5b5-f32bf23e74b0" message="#['[API]: RESPONSE\n--------\nFlow: ' ++ (flow.name default &quot;&quot;)  ++ '\nPayload:\n']#[output application/json indent=false --- (payload default &quot;&quot;)]" />
     </flow>
 </mule>

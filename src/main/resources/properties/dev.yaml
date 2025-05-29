@@ -4,3 +4,10 @@ dummy:
   port: "443"
   path:
     products: "/products"
+    
+db:
+  host: "ei-demo-mulesoft.eastus.cloudapp.azure.com"
+  port: "3306"
+  dbName: "capa_producto"
+  user: "root"
+  password: "![+IQIbuEffcR32/bCISxDog==]"
